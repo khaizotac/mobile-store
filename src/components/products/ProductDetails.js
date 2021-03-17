@@ -1,21 +1,49 @@
 import React from 'react';
+import { connect } from 'react-redux';
+import { firestoreConnect } from 'react-redux-firebase';
+import { compose } from 'redux';
+import { Redirect } from 'react-router-dom'
 
 const ProductDetails = (props) => {
-    const id = props.match.params.id;
-    return (
+    const { product, auth } = props;
+    if (!auth.uid) return <Redirect to='/signin'/>
+    if (product) {
+        return (
         <div className="container section product-details">
             <div className="card z-depth-0">
-                <div className="card-content">
-                    <span className="card-title">Product Title - {id}</span>
-                    <p>Lorem, ipsum dolor sit amet consectetur adipisicing elit. Voluptas in consequatur blanditiis similique vero odio animi temporibus quam maiores fugit, sunt veniam doloribus repellat, perspiciatis ex ea explicabo architecto. Soluta.</p>
+                    <div className="card-content">
+                        <span className="card-title">{ product.name }</span>
+                        <p>{ product.description }</p>
+                    </div>
+                    <div className="card-action gret lighten-4 grey-text">
+                    <div>{ product.price }</div>
+                    <div>Add to cart</div>
                 </div>
-                <div className="card-action gret lighten-4 grey-text">
-                <div>Create by Benjamin</div>
-                <div>15th Mar, 2021</div>
-            </div>
             </div>
         </div>
-    )
+        )
+    } else {
+        return (
+            <div className="container center">
+                <p>Loading product...</p>
+            </div>
+        )
+    }
 }
 
-export default ProductDetails
+const mapStateToProps = (state, ownProps) => {
+    const id = ownProps.match.params.id;
+    const products = state.firestore.data.products;
+    const product = products ? products[id] : null;
+    return {
+        product: product,
+        auth: state.firebase.auth
+    }
+}
+
+export default compose(
+    firestoreConnect([
+        { collection: 'products' }
+    ]),
+    connect(mapStateToProps)
+)(ProductDetails)
